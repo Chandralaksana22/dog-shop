@@ -35,10 +35,14 @@
         </div>
       </template>
     </b-modal>
+
+    <div v-if="isLoading && countdown > 0" class="countdown">
+      Memuat dalam {{ countdown }} detik...
+    </div>
   </div>
 </template>
-  
-  <script>
+
+<script>
 import { fetchSubBreeds } from "./api";
 export default {
   props: {
@@ -54,25 +58,39 @@ export default {
       isLoading: true,
       selectedSubBreed: null,
       showModal: false,
+      countdown: 10,
     };
   },
   mounted() {
-    this.fetchSubBreeds();
+    this.startCountdown();
+    this.fetchSubBreedsWithDelay();
+  },
+  watch: {
+    breed: function (newBreed) {
+      this.resetCountdown();
+      this.startCountdown();
+      this.fetchSubBreedsWithDelay();
+    },
   },
   methods: {
-    fetchSubBreeds() {
+    fetchSubBreedsWithDelay() {
       setTimeout(() => {
-        fetchSubBreeds(this.breed)
-          .then((response) => {
-            this.subBreeds = response.data.message;
-            this.fetchSubBreedImages();
-            this.isLoading = false;
-          })
-          .catch((error) => {
-            console.error(error);
-            this.isLoading = false;
-          });
+        this.fetchSubBreeds();
       }, 10000);
+    },
+    fetchSubBreeds() {
+      this.isLoading = true;
+
+      fetchSubBreeds(this.breed)
+        .then((response) => {
+          this.subBreeds = response.data.message;
+          this.fetchSubBreedImages();
+          this.isLoading = false;
+        })
+        .catch((error) => {
+          console.error(error);
+          this.isLoading = false;
+        });
     },
     fetchSubBreedImages() {
       const promises = this.subBreeds.map((subBreed) =>
@@ -86,7 +104,7 @@ export default {
       );
       Promise.all(promises)
         .then(() => {
-          this.isLoading = false;
+          thisisLoading = false;
         })
         .catch((error) => {
           console.error(error);
@@ -101,11 +119,24 @@ export default {
       this.selectedSubBreed = null;
       this.showModal = false;
     },
+    startCountdown() {
+      this.countdown = 10;
+      const timer = setInterval(() => {
+        if (this.countdown > 0) {
+          this.countdown--;
+        } else {
+          clearInterval(timer);
+        }
+      }, 1000);
+    },
+    resetCountdown() {
+      this.countdown = 0;
+    },
   },
 };
 </script>
-  
-  <style scoped>
+
+<style scoped>
 .loading {
   display: flex;
   justify-content: center;
@@ -117,5 +148,8 @@ export default {
 .cursor-default {
   cursor: default;
 }
+.countdown {
+  text-align: center;
+  margin-top: 10px;
+}
 </style>
-  

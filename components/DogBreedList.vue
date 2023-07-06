@@ -1,6 +1,15 @@
 <template>
   <div style="margin-top: 130px">
     <h2 class="cursor-default">Ras Anjing</h2>
+    <div>
+      <b-input-group class="mb-3">
+        <b-form-input v-model="filter" placeholder="Masukkan nama ras"></b-form-input>
+        <b-input-group-append>
+          <b-button size="sm" @click="filterBreeds" variant="danger">Filter</b-button>
+        </b-input-group-append>
+      </b-input-group>
+    </div>
+
     <div class="loading" v-if="isLoading">
       <b-spinner
         class="mx-auto"
@@ -21,34 +30,36 @@
     </b-row>
     <b-pagination
       v-if="!isLoading && totalPages > 1"
-      :total-rows="breeds.length"
-      :per-page="15"
+      :total-rows="filteredBreeds.length"
+      :per-page="perPage"
       v-model="currentPage"
       align="center"
     ></b-pagination>
   </div>
 </template>
-  
-  <script>
+
+<script>
 import { fetchAllBreeds } from "./api";
 
 export default {
   data() {
     return {
       breeds: [],
+      filteredBreeds: [],
       isLoading: true,
       currentPage: 1,
       perPage: 15,
+      filter: "",
     };
   },
   computed: {
     paginatedBreeds() {
       const startIndex = (this.currentPage - 1) * this.perPage;
       const endIndex = startIndex + this.perPage;
-      return this.breeds.slice(startIndex, endIndex);
+      return this.filteredBreeds.slice(startIndex, endIndex);
     },
     totalPages() {
-      return Math.ceil(this.breeds.length / this.perPage);
+      return Math.ceil(this.filteredBreeds.length / this.perPage);
     },
   },
   mounted() {
@@ -60,6 +71,7 @@ export default {
         fetchAllBreeds()
           .then((response) => {
             this.breeds = Object.keys(response.data.message);
+            this.filteredBreeds = this.breeds;
             this.isLoading = false;
           })
           .catch((error) => {
@@ -71,11 +83,22 @@ export default {
     showSubBreeds(breed) {
       this.$emit("select-breed", breed);
     },
+    filterBreeds() {
+      if (this.filter.trim() === "") {
+        this.filteredBreeds = this.breeds;
+      } else {
+        const filterValue = this.filter.toLowerCase();
+        this.filteredBreeds = this.breeds.filter((breed) =>
+          breed.toLowerCase().includes(filterValue)
+        );
+      }
+      this.currentPage = 1;
+    },
   },
 };
 </script>
-  
-  <style scoped>
+
+<style scoped>
 .card {
   margin-bottom: 20px;
 }
@@ -92,4 +115,3 @@ export default {
   cursor: default;
 }
 </style>
-  
